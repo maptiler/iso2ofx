@@ -1,0 +1,72 @@
+<!doctype html>
+<html class="no-js" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>ISO 20022 XML Converter</title>
+    <meta name="description" content="ISO 20022 XML Converter">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+
+
+    </style>
+</head>
+
+<body>
+    <!--[if lte IE 9]>
+      <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+    <![endif]-->
+    <header>
+        <h1>ISO 20022 XML Converter</h1>
+    </header>
+    <main>
+        <input type="file" id="input">
+        <a id="download" disabled='disabled' href="">Download</a>
+    </main>
+    <script type="text/javascript">
+        function transform(xml_content, xslt_url, callback) {
+            xslt = new XMLHttpRequest();
+            xslt.onreadystatechange = function() {
+                if (xslt.readyState == 4) {
+                    var xml = new DOMParser().parseFromString(xml_content, "text/xml");
+                    var processor = new XSLTProcessor();
+                    processor.importStylesheet(xslt.responseXML);
+                    var resultDoc = processor.transformToFragment(xml, document);
+                    // callback(resultDoc.textContent);
+                    callback('<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(resultDoc));
+                }
+            };
+            xslt.open("GET", xslt_url);
+            xslt.send(null);
+        }
+
+        function download(result) {
+            var a = document.getElementById('download');
+            a.href = window.URL.createObjectURL(new Blob([result], {
+                type: 'text/xml'
+            }));
+            a.download = targetFilename();
+            a.removeAttribute('disabled');
+        }
+
+        function targetFilename() {
+            var fileName = document.getElementById("input").files[0].name;
+            return fileName.replace('.xml', '.ofx');
+        }
+
+        document.getElementById("input").addEventListener("change", handleFiles, false);
+
+        function handleFiles() {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                transform(reader.result, 'camt2ofx.xsl', download);
+            }
+
+            reader.readAsText(this.files[0]);
+        }
+
+    </script>
+</body>
+
+</html>
