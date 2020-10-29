@@ -67,6 +67,19 @@
         }
 
     </script>
+
+    <script type="module">
+        import * as mt940 from './mt940-js/index.js';
+
+        fetch('test.mt940')
+        .then((response) => response.arrayBuffer())
+        .then((buffer) => {
+            mt940.read(buffer).then((statements) => {
+                // List of the Statements
+                console.log(statements);
+            });
+        });
+    </script>
 </body>
 
 </html>
