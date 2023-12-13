@@ -4,27 +4,34 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>ISO 20022 XML Converter</title>
+    <title>ISO 20022 CAMT053 to OFX XML Converter</title>
     <meta name="description" content="ISO 20022 XML Converter">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-
-
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
 </head>
 
 <body>
-    <!--[if lte IE 9]>
-      <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
-    <![endif]-->
-    <header>
-        <h1>ISO 20022 XML Converter</h1>
-    </header>
-    <main>
-        <input type="file" id="input">
-        <a id="download" disabled='disabled' href="">Download</a>
-    </main>
-    <script type="text/javascript">
+<main class="container">
+
+<header class="headings">
+    <h1>Bank statement XML convertor</h1>
+	<h2>ISO 20022 CAMT.053 to OFX free online conversion</h2>
+</header>
+
+<section>This simple webpage loads the bank statement with account balance and all transactions - exported as an XML file from an European (esp. Swiss) online banking systems in <a href="https://www.iso20022.org/">ISO20022</a> SEPA <a href="https://www.six-group.com/dam/download/banking-services/standardization/sps/ig-cash-management-delta-guide-sps2022-en.pdf">camt.053 XML format</a>, it transforms the data and generates <a href="https://financialdataexchange.org/ofx">Open Financial Exchange (OFX) format</a> suitable for import into <a href="https://www.xero.com/">Xero</a> and other accounting and financial systems.
+</section>
+
+<input id="input" type="file" >
+<a id="download" role="button" onClick="return(buttonClick())" href="">Convert &amp; Download</a>
+
+<blockquote>
+<b>Secure - your data are not submitted anywhere.</b> Conversion happens directly in your web browser locally using in-browser XSLT transformation (camt2ofx.xsl) without any server.
+Open-source code including the XSL transformation itself is available at <a href="https://github.com/maptiler/iso2ofx">https://github.com/maptiler/iso2ofx</a>.
+</blockquote>
+
+</main>
+
+<script type="text/javascript">
         function transform(xml_content, xslt_url, callback) {
             xslt = new XMLHttpRequest();
             xslt.onreadystatechange = function() {
@@ -47,7 +54,6 @@
                 type: 'text/xml'
             }));
             a.download = targetFilename();
-            a.removeAttribute('disabled');
         }
 
         function targetFilename() {
@@ -62,13 +68,18 @@
             reader.onload = function(e) {
                 transform(reader.result, 'camt2ofx.xsl', download);
             }
-
             reader.readAsText(this.files[0]);
         }
 
-    </script>
+        function buttonClick() {
+            var i = document.getElementById("input");
+            if (i.files.length == 0) {
+                alert("Choose CAMT053 XML file exported from your online banking first"); return false;
+            }
+        }
+</script>
 
-    <script type="module">
+<script type="module">
         /* TODO - finish the MT940 support first
         import * as mt940 from './mt940-js/index.js';
 
@@ -81,7 +92,7 @@
             });
         });
         */
-    </script>
+</script>
 </body>
 
 </html>
