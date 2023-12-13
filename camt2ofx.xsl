@@ -47,6 +47,7 @@
       </FITID>
       <NAME>
         <xsl:value-of select="camt:NtryDtls/camt:TxDtls/camt:RltdPties/camt:Cdtr/camt:Nm"/>
+        <xsl:value-of select="camt:NtryDtls/camt:TxDtls/camt:RltdPties/camt:Dbtr/camt:Nm"/>
       </NAME>
       <MEMO>
         <xsl:value-of select="camt:AddtlNtryInf"/>
