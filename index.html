@@ -1,98 +1,151 @@
-<!doctype html>
-<html class="no-js" lang="en">
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" 
+  xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
+  xmlns:camt="urn:iso:std:iso:20022:tech:xsd:camt.053.001.04" exclude-result-prefixes="camt">
+  <xsl:output method="xml" encoding="UTF-8" indent="yes" omit-xml-declaration="no"/>
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>ISO 20022 CAMT053 to OFX XML Converter</title>
-    <meta name="description" content="ISO 20022 XML Converter">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-</head>
+  <!-- Look at the file's GrpHdr -->
+  <xsl:template match="/camt:Document/camt:BkToCstmrStmt/camt:GrpHdr">
+    <!-- Check if the camt 053 statement is contained within a single file/message
+         We don't handle statements split into multiple files yet
+         and if one is encountered, the translation will be aborted -->
+    <xsl:if test="camt:MsgPgntn/camt:PgNb != 1 or camt:MsgPgntn/camt:LastPgInd != 'true'">
+      <xsl:message terminate="yes">
+        <xsl:text>Incomplete message (not first page or subsequent pages exist)</xsl:text>
+      </xsl:message>
+    </xsl:if>
+  </xsl:template>
 
-<body>
-<main class="container">
+  <!-- Handle one of the summary rows (opening or closing balance details) -->
+  <xsl:template match="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal">
+  	<BALAMT>
+      <xsl:if test="camt:CdtDbtInd != 'CRDT'">-</xsl:if><xsl:value-of select="camt:Amt"/>
+    </BALAMT>
+    <DTASOF>
+      <xsl:value-of select="translate(camt:Dt/camt:Dt,'-','')"/>
+    </DTASOF>
+  </xsl:template>
 
-<header class="headings">
-    <h1>Bank statement XML convertor</h1>
-	<h2>ISO 20022 CAMT.053 to OFX free online conversion</h2>
-</header>
+  <!-- Handle one of the entries in the list of transactions -->
+  <xsl:template match="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Ntry">
 
-<section>This simple webpage loads the bank statement with account balance and all transactions - exported as an XML file from an European (esp. Swiss) online banking systems in <a href="https://www.iso20022.org/">ISO20022</a> SEPA <a href="https://www.six-group.com/dam/download/banking-services/standardization/sps/ig-cash-management-delta-guide-sps2022-en.pdf">camt.053 XML format</a>, it transforms the data and generates <a href="https://financialdataexchange.org/ofx">Open Financial Exchange (OFX) format</a> suitable for import into <a href="https://www.xero.com/">Xero</a> and other accounting and financial systems.
-</section>
+    <xsl:variable name="fee" select="translate(number(camt:Chrgs/camt:TtlChrgsAndTaxAmt), 'aN', '0')"/>
 
-<input id="input" type="file" >
-<a id="download" role="button" onClick="return(buttonClick())" href="">Convert &amp; Download</a>
+    <STMTTRN>
+      <TRNTYPE>
+        <xsl:if test="camt:CdtDbtInd = 'CRDT'">CREDIT</xsl:if>
+        <xsl:if test="camt:CdtDbtInd = 'DBIT'">DEBIT</xsl:if>
+      </TRNTYPE>
+      <DTPOSTED>
+        <xsl:value-of select="translate(camt:ValDt/camt:Dt)"/>
+      </DTPOSTED>
+      <TRNAMT>
+        <xsl:if test="camt:CdtDbtInd != 'CRDT'">-</xsl:if><xsl:value-of select="camt:Amt - $fee"/>
+      </TRNAMT>
+      <FITID>
+        <xsl:value-of select="camt:NtryDtls/camt:TxDtls/camt:Refs/camt:AcctSvcrRef"/>
+      </FITID>
+      <NAME>
+        <xsl:value-of select="translate(camt:AddtlNtryInf,'Crédit','')"/>
+        <xsl:value-of select="camt:NtryDtls/camt:TxDtls/camt:RltdPties/camt:Dbtr/camt:Nm"/>
+      </NAME>
+      <MEMO>
+        <xsl:value-of select="camt:AddtlNtryInf"/>
+      </MEMO>
+    </STMTTRN>
 
-<blockquote>
-<b>Secure - your data are not submitted anywhere.</b> Conversion happens directly in your web browser locally using in-browser XSLT transformation (camt2ofx.xsl) without any server.
-Open-source code including the XSL transformation itself is available at <a href="https://github.com/maptiler/iso2ofx">https://github.com/maptiler/iso2ofx</a>.
-</blockquote>
+    <xsl:if test="$fee > 0">
 
-</main>
+      <STMTTRN>
+        <TRNTYPE>FEE</TRNTYPE>
+        <TRNDTL>
+            <xsl:if test="camt:CdtDbtInd != 'DBIT'">-</xsl:if><xsl:value-of select="camt:RmtInf/camt:Ustrd"/>
+        </TRNDTL>
+        <DTPOSTED>
+          <xsl:value-of select="translate(camt:ValDt/camt:Dt)"/>
+        </DTPOSTED>
+        <TRNAMT><xsl:value-of select="-$fee"/>
+        </TRNAMT>
+        <FITID>
+          <xsl:value-of select="camt:NtryDtls/camt:TxDtls/camt:Refs/camt:AcctSvcrRef"/><xsl:text>/FEE</xsl:text>
+        </FITID>
+        <NAME>
+          <xsl:value-of select="translate(camt:AddtlNtryInf,'Crédit','')"/>
+        </NAME>
+        <MEMO>
+          <xsl:value-of select="camt:AddtlNtryInf"/>
+        </MEMO>
+      </STMTTRN>
 
-<script type="text/javascript">
-        function transform(xml_content, xslt_url, callback) {
-            xslt = new XMLHttpRequest();
-            xslt.onreadystatechange = function() {
-                if (xslt.readyState == 4) {
-                    var xml = new DOMParser().parseFromString(xml_content, "text/xml");
-                    var processor = new XSLTProcessor();
-                    processor.importStylesheet(xslt.responseXML);
-                    var resultDoc = processor.transformToFragment(xml, document);
-                    // callback(resultDoc.textContent);
-                    callback('<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(resultDoc));
-                }
-            };
-            xslt.open("GET", xslt_url);
-            xslt.send(null);
-        }
+    </xsl:if>
 
-        function download(result) {
-            var a = document.getElementById('download');
-            a.href = window.URL.createObjectURL(new Blob([result], {
-                type: 'text/xml'
-            }));
-            a.download = targetFilename();
-        }
+  </xsl:template>
 
-        function targetFilename() {
-            var fileName = document.getElementById("input").files[0].name;
-            return fileName.replace('.xml', '.ofx');
-        }
+  <!-- Handle the root node of the XML document -->
+  <xsl:template match="/">
+    <xsl:text disable-output-escaping="yes">&lt;?OFX OFXHEADER="200" VERSION="202" SECURITY="NONE" OLDFILEUID="NONE" NEWFILEUID="NONE"?&gt;&#xD;&#xA;</xsl:text>
 
-        document.getElementById("input").addEventListener("change", handleFiles, false);
+    <OFX>
+      <BANKMSGSRSV1>
+        <STMTTRNRS>
+          <STMTRS>
+            <TRNUID>
+              <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Id"/>
+            </TRNUID>
+            <CURDEF>
+              <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal/camt:Amt/@Ccy"/>
+            </CURDEF>
+            <BANKACCTFROM>
+              <BANKID>
+                <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Acct/camt:Svcr/camt:FinInstnId/camt:BICFI"/>
+              </BANKID>
+              <ACCTID>
+                <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Acct/camt:Id"/>
+              </ACCTID>
+              <IBAN>
+                <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Acct/camt:Id/camt:IBAN"/>
+              </IBAN>
+              <ACCTTYPE>CHECKING</ACCTTYPE>
+            </BANKACCTFROM>
+            <BANKTRANLIST>
+              <DTSTART>
+                <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal/camt:Tp/camt:CdOrPrtry/camt:Cd[text()='OPBD']/../../../camt:Dt/camt:Dt"/>
+              </DTSTART>
+              <DTEND>
+                <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal/camt:Tp/camt:CdOrPrtry/camt:Cd[text()='CLBD']/../../../camt:Dt/camt:Dt"/>
+              </DTEND>
 
-        function handleFiles() {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                transform(reader.result, 'camt2ofx.xsl', download);
-            }
-            reader.readAsText(this.files[0]);
-        }
+              <!-- List of transaction details -->
+              <xsl:apply-templates select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Ntry"/>
 
-        function buttonClick() {
-            var i = document.getElementById("input");
-            if (i.files.length == 0) {
-                alert("Choose CAMT053 XML file exported from your online banking first"); return false;
-            }
-        }
-</script>
+            </BANKTRANLIST>
+            <LEDGERBAL>
 
-<script type="module">
-        /* TODO - finish the MT940 support first
-        import * as mt940 from './mt940-js/index.js';
+                <!-- Closing balance -->
+                <xsl:apply-templates select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal/camt:Tp/camt:CdOrPrtry/camt:Cd[text()='CLBD']/../../.."/>
 
-        fetch('test.mt940')
-        .then((response) => response.arrayBuffer())
-        .then((buffer) => {
-            mt940.read(buffer).then((statements) => {
-                // List of the Statements
-                console.log(statements);
-            });
-        });
-        */
-</script>
-</body>
+				    </LEDGERBAL>
+          </STMTRS>
+        </STMTTRNRS>
+      </BANKMSGSRSV1>
+    </OFX>
 
-</html>
+    <!-- Check the GrpHdr first
+    <xsl:apply-templates select="/camt:Document/camt:BkToCstmrStmt/camt:GrpHdr"/>
+    -->
+
+    <!-- Closing balance
+    /camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal/camt:Tp/camt:CdOrPrtry/camt:Cd[text()='CLBD']/../../..
+    /camt:Dt/camt:Dt
+    <xsl:value-of select="camt:Dt/camt:Dt"/>
+    <xsl:if test="camt:CdtDbtInd != 'CRDT'">-</xsl:if><xsl:value-of select="camt:Amt"/>
+    -->
+
+    <!-- Account holder name 
+    <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Acct/camt:Ownr/camt:Nm"/>
+    -->
+
+
+  </xsl:template>
+
+</xsl:stylesheet>
