@@ -36,7 +36,10 @@ Open-source code including the XSL transformation itself is available at <a href
             xslt = new XMLHttpRequest();
             xslt.onreadystatechange = function() {
                 if (xslt.readyState == 4) {
-                    var xml = new DOMParser().parseFromString(xml_content, "text/xml");
+                    // strip namespace - to process all versions of CAMT.053.001*
+                    var xml_no_ns = xml_content.replace(/<(\w+)([^>]*)\s+xmlns="urn:iso:std:iso:20022:tech:xsd:camt\.053\.001[^"]+"\s*([^>]*)>/, '<$1$2$3>');
+                    // console.log(xml_no_ns);
+                    var xml = new DOMParser().parseFromString(xml_no_ns, "text/xml");
                     var processor = new XSLTProcessor();
                     processor.importStylesheet(xslt.responseXML);
                     var resultDoc = processor.transformToFragment(xml, document);

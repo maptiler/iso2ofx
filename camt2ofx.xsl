@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" 
-  xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
-  xmlns:camt="urn:iso:std:iso:20022:tech:xsd:camt.053.001.04" exclude-result-prefixes="camt">
+  xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:output method="xml" encoding="UTF-8" indent="yes" omit-xml-declaration="no"/>
 
   <!-- Look at the file's GrpHdr -->
-  <xsl:template match="/camt:Document/camt:BkToCstmrStmt/camt:GrpHdr">
+  <xsl:template match="/Document/BkToCstmrStmt/GrpHdr">
     <!-- Check if the camt 053 statement is contained within a single file/message
          We don't handle statements split into multiple files yet
          and if one is encountered, the translation will be aborted -->
-    <xsl:if test="camt:MsgPgntn/camt:PgNb != 1 or camt:MsgPgntn/camt:LastPgInd != 'true'">
+    <xsl:if test="MsgPgntn/PgNb != 1 or MsgPgntn/LastPgInd != 'true'">
       <xsl:message terminate="yes">
         <xsl:text>Incomplete message (not first page or subsequent pages exist)</xsl:text>
       </xsl:message>
@@ -17,40 +16,40 @@
   </xsl:template>
 
   <!-- Handle one of the summary rows (opening or closing balance details) -->
-  <xsl:template match="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal">
+  <xsl:template match="/Document/BkToCstmrStmt/Stmt/Bal">
   	<BALAMT>
-      <xsl:if test="camt:CdtDbtInd != 'CRDT'">-</xsl:if><xsl:value-of select="camt:Amt"/>
+      <xsl:if test="CdtDbtInd != 'CRDT'">-</xsl:if><xsl:value-of select="Amt"/>
     </BALAMT>
     <DTASOF>
-      <xsl:value-of select="translate(camt:Dt/camt:Dt,'-','')"/>
+      <xsl:value-of select="translate(Dt/Dt,'-','')"/>
     </DTASOF>
   </xsl:template>
 
   <!-- Handle one of the entries in the list of transactions -->
-  <xsl:template match="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Ntry">
+  <xsl:template match="/Document/BkToCstmrStmt/Stmt/Ntry">
 
-    <xsl:variable name="fee" select="translate(number(camt:Chrgs/camt:TtlChrgsAndTaxAmt), 'aN', '0')"/>
+    <xsl:variable name="fee" select="translate(number(Chrgs/TtlChrgsAndTaxAmt), 'aN', '0')"/>
 
     <STMTTRN>
       <TRNTYPE>
-        <xsl:if test="camt:CdtDbtInd = 'CRDT'">CREDIT</xsl:if>
-        <xsl:if test="camt:CdtDbtInd = 'DBIT'">DEBIT</xsl:if>
+        <xsl:if test="CdtDbtInd = 'CRDT'">CREDIT</xsl:if>
+        <xsl:if test="CdtDbtInd = 'DBIT'">DEBIT</xsl:if>
       </TRNTYPE>
       <DTPOSTED>
-        <xsl:value-of select="translate(camt:ValDt/camt:Dt,'-','')"/>
+        <xsl:value-of select="translate(ValDt/Dt,'-','')"/>
       </DTPOSTED>
       <TRNAMT>
-        <xsl:if test="camt:CdtDbtInd != 'CRDT'">-</xsl:if><xsl:value-of select="camt:Amt - $fee"/>
+        <xsl:if test="CdtDbtInd != 'CRDT'">-</xsl:if><xsl:value-of select="Amt - $fee"/>
       </TRNAMT>
       <FITID>
-        <xsl:value-of select="camt:NtryDtls/camt:TxDtls/camt:Refs/camt:AcctSvcrRef"/>
+        <xsl:value-of select="NtryDtls/TxDtls/Refs/AcctSvcrRef"/>
       </FITID>
       <NAME>
-        <xsl:value-of select="camt:NtryDtls/camt:TxDtls/camt:RltdPties/camt:Cdtr/camt:Nm"/>
-        <xsl:value-of select="camt:NtryDtls/camt:TxDtls/camt:RltdPties/camt:Dbtr/camt:Nm"/>
+        <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Cdtr/Nm"/>
+        <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Dbtr/Nm"/>
       </NAME>
       <MEMO>
-        <xsl:value-of select="camt:AddtlNtryInf"/>
+        <xsl:value-of select="AddtlNtryInf"/>
       </MEMO>
     </STMTTRN>
 
@@ -59,18 +58,18 @@
       <STMTTRN>
         <TRNTYPE>FEE</TRNTYPE>
         <DTPOSTED>
-          <xsl:value-of select="translate(camt:ValDt/camt:Dt,'-','')"/>
+          <xsl:value-of select="translate(ValDt/Dt,'-','')"/>
         </DTPOSTED>
         <TRNAMT><xsl:value-of select="-$fee"/>
         </TRNAMT>
         <FITID>
-          <xsl:value-of select="camt:NtryDtls/camt:TxDtls/camt:Refs/camt:AcctSvcrRef"/><xsl:text>/FEE</xsl:text>
+          <xsl:value-of select="NtryDtls/TxDtls/Refs/AcctSvcrRef"/><xsl:text>/FEE</xsl:text>
         </FITID>
         <NAME>
-          <xsl:value-of select="camt:NtryDtls/camt:TxDtls/camt:RltdPties/camt:Cdtr/camt:Nm"/>
+          <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Cdtr/Nm"/>
         </NAME>
         <MEMO>
-          <xsl:value-of select="camt:AddtlNtryInf"/>
+          <xsl:value-of select="AddtlNtryInf"/>
         </MEMO>
       </STMTTRN>
 
@@ -87,36 +86,36 @@
         <STMTTRNRS>
           <STMTRS>
             <TRNUID>
-              <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Id"/>
+              <xsl:value-of select="/Document/BkToCstmrStmt/Stmt/Id"/>
             </TRNUID>
             <CURDEF>
-              <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal/camt:Amt/@Ccy"/>
+              <xsl:value-of select="/Document/BkToCstmrStmt/Stmt/Bal/Amt/@Ccy"/>
             </CURDEF>
             <BANKACCTFROM>
               <BANKID>
-                <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Acct/camt:Svcr/camt:FinInstnId/camt:BICFI"/>
+                <xsl:value-of select="/Document/BkToCstmrStmt/Stmt/Acct/Svcr/FinInstnId/BICFI"/>
               </BANKID>
               <ACCTID>
-                <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Acct/camt:Id"/>
+                <xsl:value-of select="/Document/BkToCstmrStmt/Stmt/Acct/Id"/>
               </ACCTID>
               <ACCTTYPE>CHECKING</ACCTTYPE>
             </BANKACCTFROM>
             <BANKTRANLIST>
               <DTSTART>
-                <xsl:value-of select="translate(/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal/camt:Tp/camt:CdOrPrtry/camt:Cd[text()='OPBD']/../../../camt:Dt/camt:Dt,'-','')"/>
+                <xsl:value-of select="translate(/Document/BkToCstmrStmt/Stmt/Bal/Tp/CdOrPrtry/Cd[text()='OPBD']/../../../Dt/Dt,'-','')"/>
               </DTSTART>
               <DTEND>
-                <xsl:value-of select="translate(/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal/camt:Tp/camt:CdOrPrtry/camt:Cd[text()='CLBD']/../../../camt:Dt/camt:Dt,'-','')"/>
+                <xsl:value-of select="translate(/Document/BkToCstmrStmt/Stmt/Bal/Tp/CdOrPrtry/Cd[text()='CLBD']/../../../Dt/Dt,'-','')"/>
               </DTEND>
 
               <!-- List of transaction details -->
-              <xsl:apply-templates select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Ntry"/>
+              <xsl:apply-templates select="/Document/BkToCstmrStmt/Stmt/Ntry"/>
 
             </BANKTRANLIST>
             <LEDGERBAL>
 
                 <!-- Closing balance -->
-                <xsl:apply-templates select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal/camt:Tp/camt:CdOrPrtry/camt:Cd[text()='CLBD']/../../.."/>
+                <xsl:apply-templates select="/Document/BkToCstmrStmt/Stmt/Bal/Tp/CdOrPrtry/Cd[text()='CLBD']/../../.."/>
 
 				    </LEDGERBAL>
           </STMTRS>
@@ -125,18 +124,18 @@
     </OFX>
 
     <!-- Check the GrpHdr first
-    <xsl:apply-templates select="/camt:Document/camt:BkToCstmrStmt/camt:GrpHdr"/>
+    <xsl:apply-templates select="/Document/BkToCstmrStmt/GrpHdr"/>
     -->
 
     <!-- Closing balance
-    /camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Bal/camt:Tp/camt:CdOrPrtry/camt:Cd[text()='CLBD']/../../..
-    /camt:Dt/camt:Dt
-    <xsl:value-of select="camt:Dt/camt:Dt"/>
-    <xsl:if test="camt:CdtDbtInd != 'CRDT'">-</xsl:if><xsl:value-of select="camt:Amt"/>
+    /Document/BkToCstmrStmt/Stmt/Bal/Tp/CdOrPrtry/Cd[text()='CLBD']/../../..
+    /Dt/Dt
+    <xsl:value-of select="Dt/Dt"/>
+    <xsl:if test="CdtDbtInd != 'CRDT'">-</xsl:if><xsl:value-of select="Amt"/>
     -->
 
     <!-- Account holder name 
-    <xsl:value-of select="/camt:Document/camt:BkToCstmrStmt/camt:Stmt/camt:Acct/camt:Ownr/camt:Nm"/>
+    <xsl:value-of select="/Document/BkToCstmrStmt/Stmt/Acct/Ownr/Nm"/>
     -->
 
 
