@@ -6,5 +6,8 @@ Secure - your data are not submitted anywhere. Conversion happens directly in yo
 
 Open-source code including the XSL transformation itself is available at https://github.com/maptiler/iso2ofx. 
 
+
+[<img width="60%" src="https://github.com/user-attachments/assets/b9a4337b-3da7-4e99-9af1-5ea66ba803d0">](https://labs.maptiler.com/iso2ofx/)
+
 Available online at:
 [https://labs.maptiler.com/iso2ofx/](https://labs.maptiler.com/iso2ofx/)
