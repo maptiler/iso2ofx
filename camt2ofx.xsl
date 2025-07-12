@@ -42,14 +42,42 @@
         <xsl:if test="CdtDbtInd != 'CRDT'">-</xsl:if><xsl:value-of select="Amt - $fee"/>
       </TRNAMT>
       <FITID>
-        <xsl:value-of select="NtryDtls/TxDtls/Refs/AcctSvcrRef"/>
+        <xsl:value-of select="AcctSvcrRef"/>
       </FITID>
+      <REFNUM>
+        <xsl:value-of select="normalize-space(NtryDtls/TxDtls/Refs/Prtry/Ref)"/>
+      </REFNUM>
       <NAME>
-        <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Cdtr/Nm"/>
-        <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Dbtr/Nm"/>
+        <xsl:choose>
+          <!-- For CREDIT transactions, show the DEBTOR (who is paying us) -->
+          <xsl:when test="CdtDbtInd = 'CRDT'">
+            <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Dbtr/Pty/Nm"/>
+            <!-- Backward compatibility: also try the old path structure -->
+            <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Dbtr/Nm"/>
+          </xsl:when>
+          <!-- For DEBIT transactions, show the CREDITOR (who we are paying) -->
+          <xsl:when test="CdtDbtInd = 'DBIT'">
+            <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Cdtr/Pty/Nm"/>
+            <!-- Backward compatibility: also try the old path structure -->
+            <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Cdtr/Nm"/>
+          </xsl:when>
+        </xsl:choose>
       </NAME>
       <MEMO>
-        <xsl:value-of select="AddtlNtryInf"/>
+        <xsl:choose>
+          <!-- First priority: Ustrd from RmtInf (most descriptive) -->
+          <xsl:when test="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd) != ''">
+            <xsl:value-of select="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd)"/>
+          </xsl:when>
+          <!-- Second priority: AddtlNtryInf without "Transaction ID: " prefix -->
+          <xsl:when test="starts-with(normalize-space(AddtlNtryInf), 'Transaction ID: ')">
+            <xsl:value-of select="substring-after(normalize-space(AddtlNtryInf), 'Transaction ID: ')"/>
+          </xsl:when>
+          <!-- Fallback: AddtlNtryInf as is -->
+          <xsl:otherwise>
+            <xsl:value-of select="normalize-space(AddtlNtryInf)"/>
+          </xsl:otherwise>
+        </xsl:choose>
       </MEMO>
     </STMTTRN>
 
@@ -63,13 +91,42 @@
         <TRNAMT><xsl:value-of select="-$fee"/>
         </TRNAMT>
         <FITID>
-          <xsl:value-of select="NtryDtls/TxDtls/Refs/AcctSvcrRef"/><xsl:text>/FEE</xsl:text>
+          <xsl:value-of select="AcctSvcrRef"/><xsl:text>/FEE</xsl:text>
         </FITID>
+        <REFNUM>
+          <xsl:value-of select="normalize-space(NtryDtls/TxDtls/Refs/Prtry/Ref)"/>
+        </REFNUM>
         <NAME>
-          <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Cdtr/Nm"/>
+          <xsl:choose>
+            <!-- For CREDIT transactions, show the DEBTOR (who is paying us) -->
+            <xsl:when test="CdtDbtInd = 'CRDT'">
+              <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Dbtr/Pty/Nm"/>
+              <!-- Backward compatibility: also try the old path structure -->
+              <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Dbtr/Nm"/>
+            </xsl:when>
+            <!-- For DEBIT transactions, show the CREDITOR (who we are paying) -->
+            <xsl:when test="CdtDbtInd = 'DBIT'">
+              <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Cdtr/Pty/Nm"/>
+              <!-- Backward compatibility: also try the old path structure -->
+              <xsl:value-of select="NtryDtls/TxDtls/RltdPties/Cdtr/Nm"/>
+            </xsl:when>
+          </xsl:choose>
         </NAME>
         <MEMO>
-          <xsl:value-of select="AddtlNtryInf"/>
+          <xsl:choose>
+            <!-- First priority: Ustrd from RmtInf (most descriptive) -->
+            <xsl:when test="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd) != ''">
+              <xsl:value-of select="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd)"/>
+            </xsl:when>
+            <!-- Second priority: AddtlNtryInf without "Transaction ID: " prefix -->
+            <xsl:when test="starts-with(normalize-space(AddtlNtryInf), 'Transaction ID: ')">
+              <xsl:value-of select="substring-after(normalize-space(AddtlNtryInf), 'Transaction ID: ')"/>
+            </xsl:when>
+            <!-- Fallback: AddtlNtryInf as is -->
+            <xsl:otherwise>
+              <xsl:value-of select="normalize-space(AddtlNtryInf)"/>
+            </xsl:otherwise>
+          </xsl:choose>
         </MEMO>
       </STMTTRN>
 
@@ -96,7 +153,7 @@
                 <xsl:value-of select="/Document/BkToCstmrStmt/Stmt/Acct/Svcr/FinInstnId/BICFI"/>
               </BANKID>
               <ACCTID>
-                <xsl:value-of select="/Document/BkToCstmrStmt/Stmt/Acct/Id"/>
+                <xsl:value-of select="normalize-space(/Document/BkToCstmrStmt/Stmt/Acct/Id)"/>
               </ACCTID>
               <ACCTTYPE>CHECKING</ACCTTYPE>
             </BANKACCTFROM>
