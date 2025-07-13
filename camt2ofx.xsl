@@ -56,7 +56,14 @@
             <xsl:value-of select="AcctSvcrRef"/>
           </FITID>
           <REFNUM>
-            <xsl:value-of select="normalize-space(NtryDtls/TxDtls/Refs/Prtry/Ref)"/>
+            <xsl:choose>
+              <xsl:when test="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd) != ''">
+                <xsl:value-of select="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd)"/>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="normalize-space(NtryDtls/TxDtls/Refs/Prtry/Ref)"/>
+              </xsl:otherwise>
+            </xsl:choose>
           </REFNUM>
           <NAME>
             <xsl:choose>
@@ -76,18 +83,18 @@
           </NAME>
           <MEMO>
             <xsl:choose>
-              <!-- First priority: Ustrd from RmtInf (most descriptive) -->
-              <xsl:when test="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd) != ''">
-                <xsl:value-of select="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd)"/>
-              </xsl:when>
-              <!-- Second priority: AddtlNtryInf without "Transaction ID: " prefix -->
+              <!-- First priority: AddtlNtryInf without 'Transaction ID: ' prefix -->
               <xsl:when test="starts-with(normalize-space(AddtlNtryInf), 'Transaction ID: ')">
                 <xsl:value-of select="substring-after(normalize-space(AddtlNtryInf), 'Transaction ID: ')"/>
               </xsl:when>
-              <!-- Fallback: AddtlNtryInf as is -->
-              <xsl:otherwise>
+              <!-- Second priority: AddtlNtryInf as is -->
+              <xsl:when test="normalize-space(AddtlNtryInf) != ''">
                 <xsl:value-of select="normalize-space(AddtlNtryInf)"/>
-              </xsl:otherwise>
+              </xsl:when>
+              <!-- Third priority: Ustrd from RmtInf -->
+              <xsl:when test="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd) != ''">
+                <xsl:value-of select="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd)"/>
+              </xsl:when>
             </xsl:choose>
           </MEMO>
         </STMTTRN>
@@ -104,7 +111,14 @@
               <xsl:value-of select="AcctSvcrRef"/><xsl:text>/FEE</xsl:text>
             </FITID>
             <REFNUM>
-              <xsl:value-of select="normalize-space(NtryDtls/TxDtls/Refs/Prtry/Ref)"/>
+              <xsl:choose>
+                <xsl:when test="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd) != ''">
+                  <xsl:value-of select="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd)"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:value-of select="normalize-space(NtryDtls/TxDtls/Refs/Prtry/Ref)"/>
+                </xsl:otherwise>
+              </xsl:choose>
             </REFNUM>
             <NAME>
               <xsl:choose>
@@ -124,18 +138,18 @@
             </NAME>
             <MEMO>
               <xsl:choose>
-                <!-- First priority: Ustrd from RmtInf (most descriptive) -->
-                <xsl:when test="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd) != ''">
-                  <xsl:value-of select="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd)"/>
-                </xsl:when>
-                <!-- Second priority: AddtlNtryInf without "Transaction ID: " prefix -->
+                <!-- First priority: AddtlNtryInf without 'Transaction ID: ' prefix -->
                 <xsl:when test="starts-with(normalize-space(AddtlNtryInf), 'Transaction ID: ')">
                   <xsl:value-of select="substring-after(normalize-space(AddtlNtryInf), 'Transaction ID: ')"/>
                 </xsl:when>
-                <!-- Fallback: AddtlNtryInf as is -->
-                <xsl:otherwise>
+                <!-- Second priority: AddtlNtryInf as is -->
+                <xsl:when test="normalize-space(AddtlNtryInf) != ''">
                   <xsl:value-of select="normalize-space(AddtlNtryInf)"/>
-                </xsl:otherwise>
+                </xsl:when>
+                <!-- Third priority: Ustrd from RmtInf -->
+                <xsl:when test="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd) != ''">
+                  <xsl:value-of select="normalize-space(NtryDtls/TxDtls/RmtInf/Ustrd)"/>
+                </xsl:when>
               </xsl:choose>
             </MEMO>
           </STMTTRN>
@@ -165,7 +179,14 @@
         <xsl:value-of select="Refs/AcctSvcrRef"/>
       </FITID>
       <REFNUM>
-        <xsl:value-of select="normalize-space(Refs/Prtry/Ref)"/>
+        <xsl:choose>
+          <xsl:when test="normalize-space(RmtInf/Ustrd) != ''">
+            <xsl:value-of select="normalize-space(RmtInf/Ustrd)"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="normalize-space(Refs/Prtry/Ref)"/>
+          </xsl:otherwise>
+        </xsl:choose>
       </REFNUM>
       <NAME>
         <xsl:choose>
@@ -185,15 +206,11 @@
       </NAME>
       <MEMO>
         <xsl:choose>
-          <!-- First priority: Ustrd from RmtInf (most descriptive) -->
-          <xsl:when test="normalize-space(RmtInf/Ustrd) != ''">
-            <xsl:value-of select="normalize-space(RmtInf/Ustrd)"/>
-          </xsl:when>
-          <!-- Second priority: AddtlTxInf -->
+          <!-- First priority: AddtlTxInf -->
           <xsl:when test="normalize-space(AddtlTxInf) != ''">
             <xsl:value-of select="normalize-space(AddtlTxInf)"/>
           </xsl:when>
-          <!-- Fallback: parent AddtlNtryInf -->
+          <!-- Second priority: parent AddtlNtryInf -->
           <xsl:otherwise>
             <xsl:value-of select="normalize-space($parentNtry/AddtlNtryInf)"/>
           </xsl:otherwise>
