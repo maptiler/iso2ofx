@@ -4,8 +4,12 @@ This simple webpage loads the bank statement with account balance and all transa
 
 Secure - your data are not submitted anywhere. Conversion happens directly in your web browser locally using in-browser XSLT transformation (camt2ofx.xsl) without any server.
 
-Open-source code including the XSL transformation itself is available at https://github.com/maptiler/iso2ofx. 
+Open-source code including the XSL transformation itself is available at https://github.com/maptiler/iso2ofx.
+It can be easily used for batch processing of files on a command line:
 
+```sh
+xsltproc clean.xsl input.xml | xsltproc camt2ofx.xsl - > output.ofx
+```
 
 [<img width="60%" src="https://github.com/user-attachments/assets/b9a4337b-3da7-4e99-9af1-5ea66ba803d0">](https://labs.maptiler.com/iso2ofx/)
 
